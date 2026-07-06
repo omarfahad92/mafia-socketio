@@ -228,30 +228,38 @@
   .room-code-big{ font-size:30px; letter-spacing:8px; }
 }</style>
 </head>
-<body>
+<body style="background-color: #0f0a07; color: #e8d9b8; font-family: 'Tajawal', sans-serif;">
 
 <div class="grain"></div>
 <div id="connStatus" class="conn-status bad">⏳ يتصل...</div>
 
-<!-- ======================= شاشة الاختيار: هوست أو لاعب ======================= -->
 <div data-view="chooser" class="chooser-wrap active">
-  <h1>🎭 لعبة المافيا</h1>
-  <div class="subtitle">اختر دورك</div>
-  <div class="chooser-btns">
-    <div class="chooser-btn" onclick="showView('hostGate')">🎙️ أنا الهوست<br><span style="font-size:12px; font-weight:400; color:var(--text-dim)">أنشئ غرفة جديدة أو ارجع لغرفتك</span></div>
-    <div class="chooser-btn" onclick="showView('playerGate')">🎮 أنا لاعب<br><span style="font-size:12px; font-weight:400; color:var(--text-dim)">ادخل بكود الغرفة واسمك</span></div>
-  </div>
+    <h1 style="color: #d9b45c; text-shadow: 0 0 15px rgba(217,180,92,0.4); margin-bottom: 5px;">👑 لعبة المافيا</h1>
+    <div class="subtitle" style="color: #b5a486; font-size: 14px; margin-bottom: 20px;">اختر دورك للبدء</div>
+    
+    <div class="chooser-btns">
+        <div class="chooser-btn" onclick="showView('hostGate')">
+            🎙️ أنا الهوست
+            <br>
+            <span style="display:block; margin-top:8px; font-size:12.5px; opacity:0.8;">أنشئ غرفة جديدة أو ارجع لغرفتك</span>
+        </div>
+        <div class="chooser-btn" onclick="showView('playerGate')">
+            🎮 أنا لاعب
+            <br>
+            <span style="display:block; margin-top:8px; font-size:12.5px; opacity:0.8;">ادخل بكود الغرفة واسمك</span>
+        </div>
+    </div>
 </div>
 
-<!-- ======================= بوابة الهوست ======================= -->
 <div data-view="hostGate" class="room-gate">
-  <h1>🎙️ لوحة الهوست</h1>
-  <div id="hostGateBody">
-    <button class="btn btn-add" style="width:100%" onclick="hostCreateRoom()">➕ إنشاء غرفة جديدة</button>
-    <div class="hint-text">لو عندك غرفة شغالة من قبل، بيرجعك لها تلقائيًا إذا نفس المتصفح</div>
-  </div>
+    <h1 style="color: #d9b45c; text-shadow: 0 0 15px rgba(217,180,92,0.4);">🎙️ لوحة الهوست</h1>
+    <div id="hostGateBody">
+        <button class="btn btn-add" style="width:100%; padding: 14px; border-radius: 12px; border: 1px solid #d9b45c77; background: linear-gradient(160deg, #2c1e12, #160f09); color: #fffbfa; font-weight: 800; font-size: 16px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.5);" onclick="hostCreateRoom()">
+            ➕ إنشاء غرفة جديدة
+        </button>
+        <div class="hint-text">لو عندك غرفة شغالة من قبل، بيرجعك لها تلقائياً إذا نفس المتصفح</div>
+    </div>
 </div>
-
 <!-- ======================= بوابة اللاعب ======================= -->
 <div data-view="playerGate" class="room-gate">
   <h1>🎮 دخول اللاعب</h1>
