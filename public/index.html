@@ -7,226 +7,145 @@
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================================
-   COSA MAFIA — إعادة تصميم سينمائي: شاشة الاختيار + بوابة الغرفة + الرولات
+   COSA MAFIA — إصلاح وتوحيد التصميم السينمائي الشامل لجميع الواجهات
    ============================================================================ */
 
-/* ---------------------------------------------------------------------------
-   شاشة الاختيار (Chooser)
---------------------------------------------------------------------------- */
-.chooser-wrap{
-  max-width:560px; margin:60px auto; text-align:center; position:relative; padding:10px;
-}
-.chooser-wrap::before{
-  content:''; position:absolute; inset:-40px -20px; z-index:-1;
-  background:radial-gradient(circle at 50% 20%, #7a1f1f22, transparent 70%);
-  pointer-events:none;
+/* تنسيق عام وضمان الخلفية الداكنة */
+body {
+  background-color: #0f0a07 !important;
+  color: #e8d9b8 !important;
+  font-family: 'Tajawal', sans-serif !important;
+  margin: 0;
+  padding: 20px;
 }
 
-.chooser-btns{
-  display:flex; gap:20px; flex-wrap:wrap; justify-content:center; margin-top:30px;
+/* عناوين اللوحة */
+h1, h2, h3 {
+  color: #d9b45c !important;
+  text-shadow: 0 0 15px rgba(217,180,92,0.3) !important;
 }
 
-.chooser-btn{
-  flex:1; min-width:210px; padding:32px 22px; border-radius:16px; cursor:pointer;
-  font-weight:800; font-size:16px; position:relative; overflow:hidden;
-  color:var(--text-dim);
-  background:
-    linear-gradient(160deg, #2a1c14f2, #140d09f7);
-  border:1px solid #8a6a3355;
-  box-shadow:
-    0 10px 30px #00000080,
-    inset 0 1px 0 #ffffff0d,
-    inset 0 0 40px #00000060;
-  transition: transform .28s cubic-bezier(.2,.8,.3,1), box-shadow .35s ease, border-color .35s ease, color .3s ease;
-  isolation:isolate;
+/* شاشة الاختيار (Chooser) وبوابة الغرفة */
+.chooser-wrap { max-width:560px; margin:60px auto; text-align:center; }
+.chooser-btns { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; margin-top:30px; }
+.chooser-btn {
+  flex:1; min-width:210px; padding:28px 22px; border-radius:16px; cursor:pointer;
+  font-weight:800; font-size:16px; color: #b5a486 !important;
+  background: linear-gradient(160deg, #2a1c14, #140d09) !important;
+  border:1px solid #8a6a3377 !important;
+  box-shadow: 0 10px 30px #00000099, inset 0 1px 0 #ffffff0d;
+  transition: all .25s ease; text-align: center;
+}
+.chooser-btn:hover {
+  color: #fffbfa !important; border-color: #d9b45c !important;
+  transform: translateY(-4px); box-shadow: 0 15px 35px #000000, 0 0 20px rgba(217,180,92,0.2);
 }
 
-/* حواف زخرفية بذهبي رفيع بأركان البطاقة (تلمذة الصورة المرجعية) */
-.chooser-btn::before{
-  content:''; position:absolute; inset:6px; border-radius:11px;
-  border:1px solid #d9b45c30;
-  pointer-events:none;
-  transition:border-color .35s ease;
-}
-
-/* توهج خفي متحرك خلف الزر */
-.chooser-btn::after{
-  content:''; position:absolute; inset:0; z-index:-1; opacity:0;
-  background:radial-gradient(circle at 50% 0%, #d9b45c33, transparent 65%);
-  transition:opacity .4s ease;
-}
-
-.chooser-btn span{
-  color:var(--text-dim); font-weight:400;
-}
-
-.chooser-btn:hover{
-  color:var(--gold-bright);
-  border-color:#d9b45c99;
-  transform:translateY(-6px) scale(1.015);
-  box-shadow:
-    0 18px 46px #00000090,
-    0 0 34px #d9b45c33,
-    inset 0 1px 0 #ffffff14,
-    inset 0 0 50px #00000050;
-}
-.chooser-btn:hover::before{ border-color:#d9b45c66; }
-.chooser-btn:hover::after{ opacity:1; }
-.chooser-btn:hover span{ color:#e8d9b855; }
-.chooser-btn:active{ transform:translateY(-2px) scale(.985); }
-
-/* ---------------------------------------------------------------------------
-   بوابة الغرفة (Room Gate) — إنشاء / دخول
---------------------------------------------------------------------------- */
-.room-gate{
+.room-gate {
   max-width:440px; margin:50px auto; text-align:center;
-  background:linear-gradient(170deg, #201510e8, #0f0a07f2);
-  border:1px solid #8a6a3344;
-  border-radius:22px;
-  padding:38px 30px 32px;
-  box-shadow:
-    0 24px 60px #00000090,
-    inset 0 1px 0 #ffffff0d;
-  position:relative;
-}
-.room-gate::before, .room-gate::after{
-  content:''; position:absolute; width:26px; height:26px;
-  border:2px solid #d9b45c55; pointer-events:none;
-}
-.room-gate::before{ top:12px; right:12px; border-left:none; border-bottom:none; border-radius:0 10px 0 0; }
-.room-gate::after{ bottom:12px; left:12px; border-right:none; border-top:none; border-radius:0 0 0 10px; }
-
-.room-gate h1{
-  text-shadow:0 0 22px #d9b45c44;
+  background: linear-gradient(170deg, #1f140f, #0d0806) !important;
+  border:1px solid #8a6a3366 !important; border-radius:22px; padding:35px 25px;
+  box-shadow: 0 24px 60px #000000;
 }
 
-.room-gate .reg-row{
-  flex-direction:column; gap:12px; margin:18px 0;
+/* شبكة توزيع الرولات (Role Pool) */
+.role-pool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  gap: 12px !important;
+  margin: 20px 0 !important;
 }
 
-.room-gate input{
-  text-align:center; font-size:17px; letter-spacing:2px;
-  padding:14px 16px; border-radius:12px;
-  background:#00000055;
-  border:1px solid #8a6a3355;
-  color:var(--text);
-  font-family:inherit;
-  transition:border-color .25s ease, box-shadow .25s ease, background .25s ease;
-}
-.room-gate input::placeholder{ color:var(--text-dim); letter-spacing:.5px; }
-.room-gate input:focus{
-  outline:none;
-  border-color:#d9b45caa;
-  background:#00000070;
-  box-shadow:0 0 0 3px #d9b45c22, 0 0 24px #d9b45c33;
+.role-pool-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: linear-gradient(160deg, #1a120d, #0d0906) !important;
+  border: 1px solid #8a6a3355 !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4) !important;
 }
 
-.room-code-big{
-  font-size:38px; font-weight:800; letter-spacing:12px; color:var(--gold-bright);
-  font-family:"Amiri",serif; text-align:center; margin:18px 0;
-  text-shadow:0 0 26px #d9b45c66, 0 0 6px #d9b45c99;
-  animation:codeGlowPulse 3.2s ease-in-out infinite;
+/* أزرار العدادات (+ / -) */
+.cnt-controls { display: flex; align-items: center; gap: 10px; }
+.cnt-controls button {
+  width: 28px !important; height: 28px !important; border-radius: 8px !important;
+  border: 1px solid #d9b45c55 !important;
+  background: linear-gradient(160deg,#2c1e12,#160f09) !important;
+  color: #fffbfa !important; font-weight: bold; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
 }
-@keyframes codeGlowPulse{
-  0%,100%{ text-shadow:0 0 26px #d9b45c55, 0 0 6px #d9b45c88; }
-  50%{ text-shadow:0 0 40px #d9b45c88, 0 0 10px #d9b45ccc; }
+.cnt-controls button:hover { background: #3a2716 !important; border-color: #d9b45c !important; }
+.cnt-controls b { min-width: 20px; text-align: center; color: #fffbfa !important; font-size: 16px; }
+
+/* إصلاح التشوه في لوحة التحكم (عناصر اليمين والشات المتداخل) */
+#hostGateBody, .control-panel-sidebar, .right-controls-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  max-width: 320px !important;
+  margin: 20px 0 20px auto !important;
+  background: #140d09 !important;
+  border: 1px solid #8a6a3344 !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
 }
 
-.hint-text{
-  font-size:12.5px; color:var(--text-dim); text-align:center; margin-top:14px;
-  line-height:1.9; opacity:.85;
+/* توحيد الأزرار العشوائية */
+button, .btn {
+  padding: 10px 16px !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  border: 1px solid #8a6a3377 !important;
+  background: linear-gradient(160deg, #2a1c14, #140d09) !important;
+  color: #e8d9b8 !important;
+  transition: all 0.2s ease !important;
+}
+button:hover, .btn:hover {
+  background: #3a2716 !important;
+  border-color: #d9b45c !important;
+  color: #fffbfa !important;
+  box-shadow: 0 0 12px rgba(217,180,92,0.2) !important;
 }
 
-/* ---------------------------------------------------------------------------
-   مؤشر حالة الاتصال
---------------------------------------------------------------------------- */
-.conn-status{
-  position:fixed; top:12px; left:12px; font-size:11px; font-weight:700;
-  padding:6px 14px; border-radius:20px; letter-spacing:.3px;
-  background:#0d0a08cc; border:1px solid #ffffff1a; z-index:500;
-  backdrop-filter:blur(6px);
-  box-shadow:0 4px 14px #00000060;
-  transition:all .3s ease;
-}
-.conn-status.ok{
-  color:#3fd88a; border-color:#3fd88a55;
-  box-shadow:0 0 14px #3fd88a33, 0 4px 14px #00000060;
-}
-.conn-status.bad{
-  color:#e25d5a; border-color:#e25d5a55;
-  box-shadow:0 0 14px #e25d5a33, 0 4px 14px #00000060;
-  animation:connBadPulse 1.6s ease-in-out infinite;
-}
-@keyframes connBadPulse{
-  0%,100%{ opacity:1; } 50%{ opacity:.55; }
+/* الشات وحقول الإدخال */
+input[type="text"], select, textarea {
+  background-color: #00000066 !important;
+  border: 1px solid #8a6a3355 !important;
+  color: #ffffff !important;
+  padding: 10px !important;
+  border-radius: 8px !important;
 }
 
-/* ---------------------------------------------------------------------------
-   شبكة توزيع الرولات (Role Pool)
---------------------------------------------------------------------------- */
-.role-pool-grid{
-  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;
+/* أزرار الوقت */
+.time-btns-wrap, div[style*="flex"] {
+  display: flex !important;
+  gap: 6px !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
 }
 
-.role-pool-item{
-  display:flex; justify-content:space-between; align-items:center;
-  background:linear-gradient(160deg, #1c140ee6, #0d0906f2);
-  border:1px solid #8a6a3340;
-  border-radius:11px; padding:9px 14px; font-size:13px; font-weight:600;
-  color:var(--text);
-  box-shadow:inset 0 1px 0 #ffffff0a, 0 3px 10px #00000050;
-  transition:border-color .25s ease, box-shadow .25s ease, transform .2s ease;
+/* إظهار وإخفاء الشاشات بسلاسة */
+[data-view] { display: none; }
+[data-view].active {
+  display: block !important;
+  animation: viewFadeIn .45s cubic-bezier(.2,.8,.3,1);
 }
-.role-pool-item:hover{
-  border-color:#d9b45c66;
-  transform:translateX(-2px);
-  box-shadow:0 0 16px #d9b45c22, inset 0 1px 0 #ffffff10, 0 3px 10px #00000060;
+@keyframes viewFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* أزرار العداد (+ / −) داخل عنصر الرول */
-.role-pool-item .cnt-controls{
-  display:flex; align-items:center; gap:8px;
+/* استجابة شاشات الجوال */
+@media (max-width: 768px) {
+  .chooser-btns { flex-direction: column; }
+  .chooser-btn { padding: 24px 16px; }
+  .role-pool-grid { grid-template-columns: 1fr !important; }
 }
-.role-pool-item .cnt-controls button{
-  width:24px; height:24px; border-radius:7px; border:1px solid #d9b45c44;
-  background:linear-gradient(160deg,#2c1e12,#160f09);
-  color:var(--gold-bright); font-weight:800; cursor:pointer; font-size:13px;
-  display:flex; align-items:center; justify-content:center; line-height:1;
-  transition:transform .15s ease, background .2s ease, box-shadow .2s ease;
-}
-.role-pool-item .cnt-controls button:hover{
-  background:linear-gradient(160deg,#3a2716,#1c130b);
-  box-shadow:0 0 10px #d9b45c44;
-}
-.role-pool-item .cnt-controls button:active{ transform:scale(.85); }
-.role-pool-item .cnt-controls b{
-  min-width:16px; text-align:center; color:var(--gold-bright);
-  font-family:'Amiri',serif; font-size:15px;
-}
-
-/* ---------------------------------------------------------------------------
-   عرض/إخفاء الشاشات
---------------------------------------------------------------------------- */
-[data-view]{ display:none; }
-[data-view].active{
-  display:block;
-  animation:viewFadeIn .45s cubic-bezier(.2,.8,.3,1);
-}
-@keyframes viewFadeIn{
-  from{ opacity:0; transform:translateY(10px); }
-  to{ opacity:1; transform:translateY(0); }
-}
-
-/* ---------------------------------------------------------------------------
-   استجابة الجوال
---------------------------------------------------------------------------- */
-@media (max-width:640px){
-  .chooser-btns{ flex-direction:column; }
-  .chooser-btn{ padding:24px 16px; }
-  .role-pool-grid{ grid-template-columns:1fr; }
-  .room-gate{ padding:28px 20px 26px; margin:30px auto; }
-  .room-code-big{ font-size:30px; letter-spacing:8px; }
-}</style>
+</style>
 </head>
 <body style="background-color: #0f0a07; color: #e8d9b8; font-family: 'Tajawal', sans-serif;">
 
