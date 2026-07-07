@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🎭 لعبة المافيا أونلاين</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style_extracted.css">
+<style>
+/* تعديلات إضافية خاصة بواجهة سوكيت.آي أو (شاشة الاختيار + شاشة إنشاء/دخول الغرفة) */
+.chooser-wrap{max-width:520px; margin:60px auto; text-align:center;}
+.chooser-btns{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:26px;}
+.chooser-btn{flex:1; min-width:200px; padding:26px 18px; border-radius:18px; cursor:pointer; font-weight:800; font-size:16px; border:1px solid #d9b45c33; background:#00000040; color:var(--text); transition:.2s;}
+.chooser-btn:hover{border-color:var(--gold-bright); transform:translateY(-3px);}
+.room-gate{max-width:420px; margin:50px auto; text-align:center;}
+.room-gate .reg-row{flex-direction:column;}
+.room-gate input{text-align:center; font-size:16px;}
+.room-code-big{font-size:34px; font-weight:800; letter-spacing:10px; color:var(--gold-bright); font-family:'Amiri',serif; text-align:center; margin:14px 0; text-shadow:0 0 20px #d9b45c55;}
+.hint-text{font-size:12.5px; color:var(--text-dim); text-align:center; margin-top:10px; line-height:1.8;}
+.conn-status{position:fixed; top:10px; left:10px; font-size:11px; padding:5px 10px; border-radius:8px; background:#00000060; border:1px solid #ffffff20; z-index:500;}
+.conn-status.ok{color:#3fd08a; border-color:#3fd08a55;}
+.conn-status.bad{color:#e23e4a; border-color:#e23e4a55;}
+.role-pool-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;}
+.role-pool-item{display:flex; justify-content:space-between; align-items:center; background:#00000030; border:1px solid #ffffff0f; border-radius:9px; padding:6px 10px; font-size:12.5px;}
+[data-view]{display:none;}
+[data-view].active{display:block;}
+@media (max-width:640px){
+  .chooser-btns{flex-direction:column;}
+  .role-pool-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+ 
+<div class="grain"></div>
+<div id="connStatus" class="conn-status bad">⏳ يتصل...</div>
+ 
+<!-- ======================= شاشة الاختيار: هوست أو لاعب ======================= -->
+<div data-view="chooser" class="chooser-wrap active">
+  <h1>🎭 لعبة المافيا</h1>
+  <div class="subtitle">اختر دورك</div>
+  <div class="chooser-btns">
+    <div class="chooser-btn" onclick="showView('hostGate')">🎙️ أنا الهوست<br><span style="font-size:12px; font-weight:400; color:var(--text-dim)">أنشئ غرفة جديدة أو ارجع لغرفتك</span></div>
+    <div class="chooser-btn" onclick="showView('playerGate')">🎮 أنا لاعب<br><span style="font-size:12px; font-weight:400; color:var(--text-dim)">ادخل بكود الغرفة واسمك</span></div>
+  </div>
+</div>
+ 
+<!-- ======================= بوابة الهوست ======================= -->
+<div data-view="hostGate" class="room-gate">
+  <h1>🎙️ لوحة الهوست</h1>
+  <div id="hostGateBody">
+    <button class="btn btn-add" style="width:100%" onclick="hostCreateRoom()">➕ إنشاء غرفة جديدة</button>
+    <div class="hint-text">لو عندك غرفة شغالة من قبل، بيرجعك لها تلقائيًا إذا نفس المتصفح</div>
+  </div>
+</div>
+ 
+<!-- ======================= بوابة اللاعب ======================= -->
+<div data-view="playerGate" class="room-gate">
+  <h1>🎮 دخول اللاعب</h1>
+  <div class="reg-row">
+    <input id="gateRoomCode" placeholder="كود الغرفة (مثال: AB3K)" maxlength="6" style="text-transform:uppercase">
+  </div>
+  <div class="reg-row">
+    <input id="gateName" placeholder="اسمك..." maxlength="24" onkeydown="if(event.key==='Enter')playerJoin()">
+  </div>
+  <button class="btn btn-add" style="width:100%" onclick="playerJoin()">🪑 دخول</button>
+  <div id="gateMsg" class="hint-text"></div>
+</div>
+ 
+<!-- ======================= واجهة الهوست (داخل اللعبة) ======================= -->
+<div data-view="host" id="hostView">
+  <h1>🎭 لوحة تحكم المافيا</h1>
+  <div class="subtitle">كود الغرفة: <b id="hostRoomCodeText"></b></div>
+ 
+  <div class="top-row">
+    <div class="glass roles-box">
+      <div class="box-title"><span class="icon">🎭</span> عدد كل رول</div>
+      <div class="role-pool-grid" id="rolePoolGrid"></div>
+      <div class="hint-text">الباقي من اللاعبين يصيرون "مواطن" تلقائيًا</div>
+    </div>
+    <div class="glass remain-box">
+      <div class="remain-label">أحياء الآن</div>
+      <div class="remain-num" id="remainNum">0</div>
+    </div>
+    <div class="glass round-box">
+      <div class="phase-indicator" id="phaseIndicator">⏳ بانتظار توزيع الرولات</div>
+      <div class="phase-btns">
+        <button class="btn-phase night" onclick="hostEmit('host:goNight')">🌙 ليل</button>
+        <button class="btn-phase day" onclick="hostEmit('host:goDay')">☀️ صباح</button>
+      </div>
+    </div>
+    <div class="glass timer-box">
+      <div class="timer-display" id="hostTimerDisplay">01:00</div>
+      <div class="timer-presets">
+        <button onclick="hostEmit('host:timerStart',{seconds:30})">30s</button>
+        <button onclick="hostEmit('host:timerStart',{seconds:60})">60s</button>
+        <button onclick="hostEmit('host:timerStart',{seconds:120})">120s</button>
+      </div>
+      <div class="timer-controls">
+        <button class="tbtn reset" onclick="hostEmit('host:timerStop')">⏹️</button>
+      </div>
+    </div>
+  </div>
+ 
+  <div class="add-row">
+    <input id="hostAddNameInput" placeholder="اسم لاعب محلي (اختياري)..." onkeydown="if(event.key==='Enter')hostAddPlayer()">
+    <button class="btn btn-add" onclick="hostAddPlayer()">➕ إضافة</button>
+  </div>
+ 
+  <div class="action-row">
+    <button class="btn btn-distribute" onclick="hostEmit('host:distributeRoles')">🎭 توزيع الرولات</button>
+    <button class="btn btn-hide" onclick="hostEmit('host:revealAllRoles')">🔓 كشف/إخفاء كل الأدوار</button>
+    <button class="btn btn-log" onclick="toggleLog()">📜 السجل</button>
+    <button class="btn btn-chat" onclick="toggleChat()">💬 شات</button>
+    <button class="btn btn-vote" onclick="toggleMafiaChat()">🕶️ شات المافيا (مراقبة)</button>
+    <button class="btn btn-resetall" onclick="if(confirm('متأكد تبي تصفّر كل شي؟'))hostEmit('host:resetEverything')">🔄 إعادة تعيين الكل</button>
+  </div>
+ 
+  <div class="glass night-summary-box" id="nightSummaryBox" style="display:none">
+    <div class="box-title"><span class="icon">🌙</span> ملخص الليلة</div>
+    <div id="nightSummaryContent"></div>
+  </div>
+ 
+  <div class="glass vote-box" id="voteResultBox" style="display:none"></div>
+  <div class="glass vote-box" id="hostVoteBox" style="display:none"></div>
+ 
+  <div class="cards" id="cards"></div>
+</div>
+ 
+<!-- ======================= واجهة اللاعب (داخل اللعبة) ======================= -->
+<div data-view="player" id="playerView">
+  <h1>🎭 لعبة المافيا</h1>
+  <div id="pvBody"></div>
+</div>
+ 
+<!-- ======================= لوحات جانبية مشتركة (هوست) ======================= -->
+<div class="log-panel" id="logPanel">
+  <div class="log-header"><span>📜 سجل اللعبة</span><button class="modal-close" onclick="toggleLog()">✕</button></div>
+  <div class="log-list" id="logList"></div>
+</div>
+ 
+<div class="log-panel" id="chatPanel">
+  <div class="log-header"><span>💬 الشات العام</span><button class="modal-close" onclick="toggleChat()">✕</button></div>
+  <div class="log-list" id="hostChatList"></div>
+  <div class="chat-input-row"><input id="hostChatInput" placeholder="رسالة كهوست..." onkeydown="if(event.key==='Enter')hostSendChat()"><button onclick="hostSendChat()">إرسال</button></div>
+</div>
+ 
+<div class="mafia-chat-panel" id="mafiaChatPanel">
+  <div class="log-header"><span>🕶️ شات المافيا السري (مراقبة الهوست)</span><button class="modal-close" onclick="toggleMafiaChat()">✕</button></div>
+  <div class="mafia-chat-members" id="mafiaChatMembersBar">لا يوجد أعضاء بعد</div>
+  <div class="log-list" id="mafiaChatList"></div>
+</div>
+ 
+<div class="win-overlay" id="winOverlay">
+  <div class="win-card" id="winCard">
+    <div class="win-confetti-layer" id="confettiLayer"></div>
+    <div class="win-trophy">🏆</div>
+    <h2 id="winTitle" style="font-family:'Amiri',serif; font-size:26px; margin:10px 0;"></h2>
+    <div id="winSurvivors" style="font-size:13px; color:var(--text-dim); line-height:2;"></div>
+    <button class="btn btn-add" style="margin-top:20px" onclick="document.getElementById('winOverlay').classList.remove('open')">إغلاق</button>
+  </div>
+</div>
+ 
+<script src="/socket.io/socket.io.js"></script>
+<script>
+/* ============================================================================
+   العميل: منطقه بسيط — كل الحسابات صارت بالسيرفر. هذا الملف بس يعرض ويرسل أوامر
+   ============================================================================ */
+ 
+const socket = io();
+let myRole = null; // 'host' | 'player'
+let myRoomCode = null;
+ 
+function showView(name){
+  document.querySelectorAll('[data-view]').forEach(el=>el.classList.remove('active'));
+  const el = document.querySelector(`[data-view="${name}"]`);
+  if(el) el.classList.add('active');
+}
+ 
+socket.on('connect', ()=>{
+  const cs = document.getElementById('connStatus');
+  cs.textContent = '🟢 متصل بالسيرفر';
+  cs.className = 'conn-status ok';
+  attemptAutoRejoin();
+});
+socket.on('disconnect', ()=>{
+  const cs = document.getElementById('connStatus');
+  cs.textContent = '🔴 انقطع الاتصال، يحاول يرجع...';
+  cs.className = 'conn-status bad';
+});
+socket.io.on('reconnect', ()=> attemptAutoRejoin());
+ 
+function attemptAutoRejoin(){
+  const savedHost = localStorage.getItem('mafia_hostSession');
+  if(savedHost){
+    const { roomCode, hostToken } = JSON.parse(savedHost);
+    socket.emit('host:rejoin', { roomCode, hostToken }, (res)=>{
+      if(res.ok){
+        myRole = 'host'; myRoomCode = res.roomCode;
+        document.getElementById('hostRoomCodeText').textContent = res.roomCode;
+        showView('host');
+      } else {
+        localStorage.removeItem('mafia_hostSession');
+      }
+    });
+    return;
+  }
+  const savedPlayer = localStorage.getItem('mafia_playerSession');
+  if(savedPlayer){
+    const { roomCode, playerId, playerToken } = JSON.parse(savedPlayer);
+    socket.emit('player:rejoin', { roomCode, playerId, playerToken }, (res)=>{
+      if(res.ok){
+        myRole = 'player'; myRoomCode = roomCode;
+        showView('player');
+      } else {
+        localStorage.removeItem('mafia_playerSession');
+      }
+    });
+  }
+}
+ 
+/* ---------------- الهوست: إنشاء الغرفة ---------------- */
+function hostCreateRoom(){
+  socket.emit('host:create', {}, (res)=>{
+    if(!res.ok) return;
+    localStorage.setItem('mafia_hostSession', JSON.stringify({ roomCode: res.roomCode, hostToken: res.hostToken }));
+    myRole = 'host'; myRoomCode = res.roomCode;
+    document.getElementById('hostRoomCodeText').textContent = res.roomCode;
+    showView('host');
+  });
+}
+ 
+function hostEmit(event, data){
+  socket.emit(event, data || {}, (res)=>{
+    if(res && res.ok === false && res.message) alert(res.message);
+  });
+}
+ 
+function hostAddPlayer(){
+  const input = document.getElementById('hostAddNameInput');
+  const name = input.value.trim();
+  if(!name) return;
+  hostEmit('host:addPlayer', { name });
+  input.value = '';
+}
+ 
+const ROLE_NAMES = ['مافيا','دكتور','شايب','جاسوس','هنتر','مجنون'];
+function renderRolePoolGrid(rolePool){
+  const grid = document.getElementById('rolePoolGrid');
+  grid.innerHTML = ROLE_NAMES.map(r=>`
+    <div class="role-pool-item">
+      <span>${r}</span>
+      <div class="cnt-controls">
+        <button onclick="changeRolePool('${r}',-1)">−</button>
+        <b>${rolePool[r]||0}</b>
+        <button onclick="changeRolePool('${r}',1)">+</button>
+      </div>
+    </div>`).join('');
+}
+let _lastRolePool = {مافيا:1,دكتور:1,شايب:1,جاسوس:0,هنتر:0,مجنون:0};
+function changeRolePool(role, delta){
+  const next = { ..._lastRolePool };
+  next[role] = Math.max(0, (next[role]||0) + delta);
+  hostEmit('host:setRolePool', { rolePool: next });
+}
+ 
+/* ---------------- الهوست: استقبال الحالة وعرضها ---------------- */
+socket.on('hostState', (state)=>{
+  _lastRolePool = state.rolePool;
+  renderRolePoolGrid(state.rolePool);
+  document.getElementById('remainNum').textContent = state.remain;
+  document.getElementById('phaseIndicator').textContent =
+    state.phase==='lobby' ? '⏳ بانتظار توزيع الرولات'
+    : state.phase==='night' ? `🌙 الطور الحالي: الليل — راوند ${state.round}`
+    : `☀️ الطور الحالي: النهار — راوند ${state.round}`;
+ 
+  const nsBox = document.getElementById('nightSummaryBox');
+  const nsContent = document.getElementById('nightSummaryContent');
+  if(state.nightSummary && state.nightSummary.length){
+    nsContent.innerHTML = state.nightSummary.map(l=>`<div class="log-entry">${l}</div>`).join('');
+    nsBox.style.display = 'block';
+  } else {
+    nsBox.style.display = 'none';
+  }
+ 
+  const vrBox = document.getElementById('voteResultBox');
+  if(state.lastVoteResult && state.lastVoteResult.breakdown){
+    vrBox.style.display = 'flex';
+    vrBox.innerHTML = `<div class="box-title"><span class="icon">📣</span> نتيجة التصويت — من صوّت لمين</div>
+      <div class="vote-tally">${state.lastVoteResult.breakdown.map(b=>`<div class="vote-row vote-sentence"><span>${escapeHtml(b.text)}</span></div>`).join('')}</div>`;
+  } else {
+    vrBox.style.display = 'none';
+  }
+ 
+  const voteBox = document.getElementById('hostVoteBox');
+  if(state.voting.active){
+    const alive = state.players.filter(p=>!p.dead);
+    const tally = {}; alive.forEach(p=>tally[p.id]=0); tally['__skip__']=0;
+    Object.values(state.voting.votes).forEach(v=>{ if(tally[v]!==undefined) tally[v]++; });
+    voteBox.style.display = 'flex';
+    voteBox.innerHTML = `
+      <div class="box-title"><span class="icon">🗳️</span> التصويت جارٍ (${Object.keys(state.voting.votes).length}/${alive.length})</div>
+      <label class="vote-reveal-toggle"><input type="checkbox" ${state.voting.voteRevealEnabled?'checked':''} onchange="hostEmit('host:toggleVoteReveal',{value:this.checked})"> 👁️ كشف النتيجة للاعبين أثناء التصويت</label>
+      <div class="vote-tally">
+        ${alive.map(p=>`<div class="vote-row"><span>${escapeHtml(p.name)}</span><b>${tally[p.id]}</b></div>`).join('')}
+        <div class="vote-row"><span>⏭️ تخطي</span><b>${tally['__skip__']}</b></div>
+      </div>
+      <div class="vote-actions">
+        <button class="btn btn-add" onclick="hostEmit('host:endVoting')">إنهاء التصويت وكشف النتيجة ⚖️</button>
+        <button class="btn btn-clear" onclick="hostEmit('host:cancelVoting')">إلغاء بدون طرد ✖</button>
+      </div>`;
+  } else {
+    voteBox.style.display = 'none';
+  }
+ 
+  document.getElementById('hostTimerDisplay').textContent = formatTime(state.timer.seconds);
+ 
+  renderMafiaChatPanel(state.mafiaChat);
+  renderHostLog(state.log);
+  renderHostChat(state.chat);
+  renderHostCards(state);
+ 
+  if(state.gameOver) showWinOverlay(state.gameOver);
+});
+ 
+function renderHostCards(state){
+  const wrap = document.getElementById('cards');
+  const hasAliveCrazy = state.players.some(p=>!p.dead && p.role==='مجنون');
+  wrap.innerHTML = state.players.map(p=>{
+    let btns = '';
+    if(!p.dead){
+      btns += `<button class="cbtn kill${p.markedKill?' active':''}" onclick="hostEmit('host:manualMark',{kind:'kill',playerId:'${p.id}'})">🔪 ${p.markedKill?'إلغاء استهداف':'استهداف'}</button>`;
+      btns += `<button class="cbtn protect${(p.protected&&!p.protectedByCrazyId)?' active':''}" onclick="hostEmit('host:manualMark',{kind:'protect',playerId:'${p.id}'})">🩺 ${(p.protected&&!p.protectedByCrazyId)?'إلغاء حماية':'حماية'}</button>`;
+      btns += `<button class="cbtn spy${p.markedSpy?' active':''}" onclick="hostEmit('host:manualMark',{kind:'spy',playerId:'${p.id}'})">👁️ ${p.markedElder?'إلغاء سؤال الشايب':'سؤال الشايب'}</button>`;
+      btns += `<button class="cbtn spy${p.markedSpy?' active':''}" onclick="hostEmit('host:manualMark',{kind:'spy',playerId:'${p.id}'})">🕵️ ${p.markedSpy?'إلغاء تجسس':'تجسس'}</button>`;
+      btns += `<button class="cbtn hunter${p.markedHunter?' active':''}" onclick="hostEmit('host:manualMark',{kind:'hunter',playerId:'${p.id}'})" ${p.markedHunter?'disabled':''}>🏹 ${p.markedHunter?'هدف الهنتر':'صيد هنتر'}</button>`;
+      if(hasAliveCrazy){
+        btns += `<button class="cbtn crazy${p.markedCrazy?' active':''}" onclick="hostEmit('host:manualMark',{kind:'crazy',playerId:'${p.id}'})" ${p.markedCrazy?'disabled':''}>🃏 ${p.markedCrazy?'هدفه النهائي':'قتلة مجنون'}</button>`;
+        btns += `<button class="cbtn protect${(p.protected&&p.protectedByCrazyId)?' active':''}" onclick="hostEmit('host:manualMark',{kind:'crazyProtect',playerId:'${p.id}'})">🛡️ ${(p.protected&&p.protectedByCrazyId)?'إلغاء حماية مجنون':'حماية مجنون'}</button>`;
+      }
+    }
+    btns += `<button class="cbtn del" onclick="if(confirm('حذف ${escapeHtml(p.name)}؟'))hostEmit('host:kickPlayer',{playerId:'${p.id}'})">🗑️ حذف</button>`;
+    return `<div class="card${p.dead?' dead':''}${p.markedKill?' targeted':''}${p.protected?' protected':''}">
+      <div class="card-top">
+        <div class="card-name"><span class="card-dot" style="color:${p.color}"></span>${escapeHtml(p.name)} ${p.online?'🟢':'⚪'}</div>
+        <div class="status-badge">${p.dead?'⚰️':'🙂'}</div>
+      </div>
+      ${p.role ? `<div class="role-cell${p.roleRevealed?' revealed':''}" onclick="this.classList.toggle('revealed')">
+        <div class="role-face-wrap"><div class="role-face front">اضغط للكشف</div><div class="role-face back">${escapeHtml(p.role)}</div></div>
+      </div>` : ''}
+      <div class="card-btns">${btns}</div>
+    </div>`;
+  }).join('');
+}
+ 
+function renderHostLog(log){
+  document.getElementById('logList').innerHTML = log.length
+    ? log.map(l=>`<div class="log-entry">${l.text}<span class="log-time">${l.time}</span></div>`).join('')
+    : '<div class="log-empty">ما فيه أحداث لسا</div>';
+}
+function renderHostChat(chat){
+  const el = document.getElementById('hostChatList');
+  el.innerHTML = chat.length
+    ? chat.map(m=>`<div class="log-entry chat-msg ${m.isHost?'chat-host':'chat-player'}"><b>${m.isHost?'🎙️ الهوست':escapeHtml(m.sender)}:</b> ${escapeHtml(m.text)}<span class="log-time">${m.time}</span></div>`).join('')
+    : '<div class="log-empty">ما فيه رسائل لسا</div>';
+  el.scrollTop = el.scrollHeight;
+}
+function hostSendChat(){
+  const input = document.getElementById('hostChatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  hostEmit('host:chatSend', { text });
+  input.value = '';
+}
+function renderMafiaChatPanel(mafiaChat){
+  const membersBar = document.getElementById('mafiaChatMembersBar');
+  const list = document.getElementById('mafiaChatList');
+  membersBar.textContent = mafiaChat.members.length
+    ? '👥 الأعضاء: ' + mafiaChat.members.join('، ')
+    : 'ما فيه أعضاء بعد — بيفتح تلقائيًا لما يصير فيه مافيتين أو أكثر';
+  list.innerHTML = mafiaChat.messages.length
+    ? mafiaChat.messages.map(m=>`<div class="log-entry chat-msg"><b>${escapeHtml(m.sender)}:</b> ${escapeHtml(m.text)}<span class="log-time">${m.time}</span></div>`).join('')
+    : '<div class="log-empty">ما فيه رسائل بعد</div>';
+  list.scrollTop = list.scrollHeight;
+}
+function toggleLog(){ document.getElementById('logPanel').classList.toggle('open'); }
+function toggleChat(){ document.getElementById('chatPanel').classList.toggle('open'); }
+function toggleMafiaChat(){ document.getElementById('mafiaChatPanel').classList.toggle('open'); }
+ 
+/* ---------------- اللاعب: الدخول ---------------- */
+function playerJoin(){
+  const roomCode = document.getElementById('gateRoomCode').value.trim().toUpperCase();
+  const name = document.getElementById('gateName').value.trim();
+  const msgEl = document.getElementById('gateMsg');
+  if(!roomCode || !name){ msgEl.textContent = 'اكتب كود الغرفة واسمك'; return; }
+  socket.emit('player:register', { roomCode, name }, (res)=>{
+    if(!res.ok){ msgEl.textContent = res.message; return; }
+    localStorage.setItem('mafia_playerSession', JSON.stringify({ roomCode, playerId: res.playerId, playerToken: res.playerToken }));
+    myRole = 'player'; myRoomCode = roomCode;
+    showView('player');
+  });
+}
+ 
+/* ---------------- اللاعب: استقبال الحالة ---------------- */
+let _pvGameOverShown = false;
+let _pvTimerInterval = null;
+ 
+socket.on('privateAlert', (msg)=> alert(msg));
+ 
+socket.on('state', (state)=>{
+  if(state.type === 'lobbyInfo'){
+    // ما فيه شاشة لوبي منفصلة بهالنسخة، اللاعب يشوف حالته بعد الدخول مباشرة
+    return;
+  }
+  renderPlayerState(state);
+});
+ 
+function renderPlayerState(state){
+  if(state.gameOver){
+    if(!_pvGameOverShown){ _pvGameOverShown = true; showWinOverlay(state.gameOver); }
+  } else {
+    _pvGameOverShown = false;
+  }
+ 
+  const body = document.getElementById('pvBody');
+  const self = state.self;
+ 
+  const wrap = document.getElementById('playerView');
+  wrap.classList.toggle('pv-atmosphere-night', state.phase === 'night');
+  wrap.classList.toggle('pv-atmosphere-day', state.phase === 'day');
+ 
+  const phaseLabel = state.phase === 'night' ? '🌙 الليل' : state.phase === 'day' ? '☀️ النهار' : '⏳ استعداد';
+  let html = `<div class="pv-phase-badge phase-${state.phase}">${phaseLabel}${state.round ? (' — راوند '+state.round) : ''}</div>`;
+ 
+  html += `<div class="pv-self-card"><div class="pv-self-name">👤 ${self ? escapeHtml(self.name) : ''}</div>`;
+  if(self && self.role){
+    html += `<div class="pv-role-cell" id="pvRoleCell"
+        onclick="pvToggleReveal()"
+        onmousedown="pvHoldReveal(true)" onmouseup="pvHoldReveal(false)" onmouseleave="pvHoldReveal(false)"
+        ontouchstart="pvHoldReveal(true)" ontouchend="pvHoldReveal(false)" ontouchcancel="pvHoldReveal(false)">
+      <div class="pv-role-face-wrap">
+        <div class="pv-role-face front">🎭 اضغط مطولاً للكشف</div>
+        <div class="pv-role-face back">${escapeHtml(self.role)}</div>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="pv-status" style="padding:6px 0">بانتظار توزيع الرولات...</div>`;
+  }
+  if(self && self.dead) html += `<div class="pv-dead-tag">⚰️ أنت خارج اللعبة</div>`;
+  html += `</div>`;
+ 
+  if(state.nightSummary && state.nightSummary.length){
+    html += `<div class="pv-night-summary"><div class="pv-night-summary-title">🌙 ملخص الليلة</div>
+      ${state.nightSummary.map(l=>`<div class="pv-night-summary-line">${l}</div>`).join('')}</div>`;
+  }
+  if(state.lastVoteResult && state.lastVoteResult.breakdown){
+    html += `<div class="pv-night-summary pv-vote-result"><div class="pv-night-summary-title">📣 نتيجة التصويت</div>
+      ${state.lastVoteResult.breakdown.map(b=>`<div class="pv-night-summary-line">${escapeHtml(b.text)}</div>`).join('')}</div>`;
+  }
+ 
+  html += `<div class="pv-section-title">اللاعبين (${state.remain} أحياء)</div><div class="pv-players">`;
+  html += state.players.map(p=>`<div class="pv-player-row${p.dead?' dead':''}">${p.dead?'⚰️':(p.online?'🙂':'😴')} ${escapeHtml(p.name)}${p.knownRole?`<span class="pv-known-tag">🔎 ${escapeHtml(p.knownRole)}</span>`:''}${p.revealedRole?`<span class="pv-known-tag">🔓 ${escapeHtml(p.revealedRole)}</span>`:''}</div>`).join('');
+  html += `</div>`;
+ 
+  if(state.phase === 'day' && state.voting && state.voting.active){
+    if(self && !self.dead){
+      html += `<div class="pv-section-title">🗳️ التصويت جارٍ (${state.voting.votedCount}/${state.voting.totalVoters})</div><div class="pv-vote-panel">`;
+      html += state.voting.candidates.map(c=>`<button class="pv-vote-btn${state.voting.myVote===c.id?' picked':''}" onclick="pvVote('${c.id}')">${state.voting.myVote===c.id?'✅ ':''}${escapeHtml(c.name)}</button>`).join('');
+      if(state.voting.myVote) html += `<button class="pv-vote-cancel" onclick="pvVote(null)">إلغاء صوتي</button>`;
+      html += `</div>`;
+      if(state.voting.revealed && state.voting.tally){
+        html += `<div class="pv-vote-tally">` + state.voting.tally.map(t=>`<div class="pv-vote-tally-row"><span>${escapeHtml(t.name)}</span><b>${t.count}</b></div>`).join('') + `</div>`;
+      }
+    } else {
+      html += `<div class="pv-status" style="padding:6px 0">🗳️ التصويت جارٍ، أنت خارج اللعبة</div>`;
+    }
+  }
+ 
+  const nightActive = state.phase === 'night';
+ 
+  if(state.isMafia && self && !self.dead){
+    html += `<div class="pv-kill-panel"><div class="pv-section-title" style="margin-top:0">🔪 اختر ضحاياك</div>`;
+    if(!nightActive){ html += `<div class="pv-status" style="padding:6px 0">🌙 هذي القدرة تشتغل بس بالليل</div>`; }
+    else {
+      if(state.killInfo) html += `<div class="pv-kill-count">مستهدفين: ${state.killInfo.marked} / ${state.killInfo.limit}</div>`;
+      html += state.aliveTargets.length ? state.aliveTargets.map(t=>`<button class="pv-kill-btn${t.marked?' marked':''}" onclick="pvEmit('player:markKill','${t.id}')">${t.marked?'🎯 إلغاء استهداف ':'استهداف '}${escapeHtml(t.name)}</button>`).join('') : `<div class="pv-status" style="padding:6px 0">ما فيه أهداف متاحة</div>`;
+    }
+    html += `</div>`;
+  }
+ 
+  if(state.isDoctor && self && !self.dead){
+    html += `<div class="pv-kill-panel protect-panel"><div class="pv-section-title" style="margin-top:0">🩺 اختر من تحميه (تقدر تحمي نفسك)</div>`;
+    if(!nightActive){ html += `<div class="pv-status" style="padding:6px 0">🌙 هذي القدرة تشتغل بس بالليل</div>`; }
+    else {
+      if(state.protectInfo) html += `<div class="pv-kill-count">محميين: ${state.protectInfo.marked} / ${state.protectInfo.limit}</div>`;
+      html += (state.protectTargets && state.protectTargets.length) ? state.protectTargets.map(t=>`<button class="pv-protect-btn${t.marked?' marked':''}" onclick="pvEmit('player:markProtect','${t.id}')">${t.marked?'🛡️ إلغاء حماية ':'حماية '}${t.id===self.id?'(نفسك) ':''}${escapeHtml(t.name)}</button>`).join('') : `<div class="pv-status" style="padding:6px 0">ما فيه أهداف متاحة</div>`;
+    }
+    html += `</div>`;
+  }
+ 
+  if(state.isElder && self && !self.dead){
+    html += `<div class="pv-kill-panel elder-panel"><div class="pv-section-title" style="margin-top:0">👁️ اختر لاعب لتشوف روله (بعد نهاية الليل)</div>`;
+    if(!nightActive){ html += `<div class="pv-status" style="padding:6px 0">🌙 هذي القدرة تشتغل بس بالليل</div>`; }
+    else {
+      if(state.elderInfo) html += `<div class="pv-kill-count">استخدامات: ${state.elderInfo.used} / ${state.elderInfo.limit}</div>`;
+      if(state.elderInfo && state.elderInfo.used >= state.elderInfo.limit && !(state.elderTargets||[]).some(t=>t.marked)){
+        html += `<div class="pv-status" style="padding:6px 0">🚫 استخدمت حد استخداماتك، انتظر الراوند الجاي</div>`;
+      } else {
+        html += (state.elderTargets && state.elderTargets.length) ? state.elderTargets.map(t=>`<button class="pv-elder-btn${t.marked?' marked':''}" onclick="pvEmit('player:elderPeek','${t.id}')">👁️ ${t.marked?'إلغاء السؤال عن ':''}${t.id===self.id?'(نفسك) ':''}${escapeHtml(t.name)}</button>`).join('') : `<div class="pv-status" style="padding:6px 0">ما فيه أهداف متاحة</div>`;
+      }
+    }
+    html += `</div>`;
+  }
+ 
+  if(state.isSpy && self && !self.dead){
+    html += `<div class="pv-kill-panel elder-panel"><div class="pv-section-title" style="margin-top:0">🕵️ اختر من تتجسس عليهم</div>`;
+    if(!nightActive){ html += `<div class="pv-status" style="padding:6px 0">🌙 هذي القدرة تشتغل بس بالليل</div>`; }
+    else {
+      if(state.spyInfo) html += `<div class="pv-kill-count">مستهدفين: ${state.spyInfo.marked} / ${state.spyInfo.limit}</div>`;
+      html += (state.spyTargets && state.spyTargets.length) ? state.spyTargets.map(t=>`<button class="pv-elder-btn${t.marked?' marked':''}" onclick="pvEmit('player:markSpy','${t.id}')">${t.marked?'🕵️ إلغاء تجسس ':'تجسس '}${escapeHtml(t.name)}</button>`).join('') : `<div class="pv-status" style="padding:6px 0">ما فيه أهداف متاحة</div>`;
+    }
+    html += `</div>`;
+  }
+ 
+  if(state.isHunter && self && !self.dead){
+    html += `<div class="pv-kill-panel hunter-panel"><div class="pv-section-title" style="margin-top:0">🏹 اختر هدف صيدك (رصاصة نهائية طول اللعبة)</div>`;
+    if(!nightActive){ html += `<div class="pv-status" style="padding:6px 0">🌙 هذي القدرة تشتغل بس بالليل</div>`; }
+    else {
+      const remaining = state.hunterInfo ? (state.hunterInfo.limit - state.hunterInfo.usedTotal) : 0;
+      const alreadyPicked = state.hunterTargets && state.hunterTargets.some(t=>t.marked);
+      if(state.hunterInfo) html += `<div class="pv-kill-count">الرصاص المتاح: ${remaining}</div>`;
+      if(!state.hunterTargets || !state.hunterTargets.length){ html += `<div class="pv-status" style="padding:6px 0">ما فيه أهداف متاحة</div>`; }
+      else if(remaining<=0 && !alreadyPicked){ html += `<div class="pv-status" style="padding:6px 0">🚫 استخدمت رصاصتك الوحيدة</div>`; }
+      else {
+        html += state.hunterTargets.map(t=>{
+          if(t.marked) return `<button class="pv-kill-btn marked" disabled>🏹 هدفك النهائي: ${escapeHtml(t.name)}</button>`;
+          if(alreadyPicked) return `<button class="pv-kill-btn" disabled>${escapeHtml(t.name)}</button>`;
+          return `<button class="pv-kill-btn" onclick="pvEmit('player:markHunter','${t.id}')">🎯 صيد ${escapeHtml(t.name)}</button>`;
+        }).join('');
+      }
+      html += `<div class="pv-status" style="padding:6px 0; font-size:11px">⚠️ هدفك بيموت أكيد؛ لو طلع مافيا بيعلن رولها، غير كذا بدون ما يظهر روله</div>`;
+    }
+    html += `</div>`;
+  }
+ 
+  if(state.isCrazy && self && !self.dead){
+    html += `<div class="pv-kill-panel crazy-panel"><div class="pv-section-title" style="margin-top:0">🃏 اختر: قتل أو حماية هالليلة</div>`;
+    if(!nightActive){ html += `<div class="pv-status" style="padding:6px 0">🌙 هذي القدرة تشتغل بس بالليل</div>`; }
+    else {
+      const remaining = state.crazyInfo ? (state.crazyInfo.limit - state.crazyInfo.usedTotal) : 0;
+      const alreadyPicked = state.crazyTargets && state.crazyTargets.some(t=>t.marked);
+      const alreadyProtected = state.crazyHasProtectedThisRound;
+      html += `<div class="pv-kill-count">القتلات المتاحة طول اللعبة: ${remaining}</div>`;
+      html += `<div class="pv-crazy-subtitle">🔪 قتل (نهائي)</div>`;
+      if(!state.crazyTargets || !state.crazyTargets.length){ html += `<div class="pv-status" style="padding:6px 0">ما فيه أهداف متاحة</div>`; }
+      else if(remaining<=0 && !alreadyPicked){ html += `<div class="pv-status" style="padding:6px 0">🚫 استخدمت قتلتك الوحيدة</div>`; }
+      else if(alreadyProtected){ html += `<div class="pv-status" style="padding:6px 0">🚫 اخترت الحماية هالليلة</div>`; }
+      else {
+        html += state.crazyTargets.map(t=>{
+          if(t.marked) return `<button class="pv-vote-btn picked" disabled>🃏 هدفك النهائي: ${escapeHtml(t.name)}</button>`;
+          if(alreadyPicked) return `<button class="pv-vote-btn" disabled>${escapeHtml(t.name)}</button>`;
+          return `<button class="pv-vote-btn" onclick="pvEmit('player:markCrazy','${t.id}')">قتلة ${escapeHtml(t.name)}</button>`;
+        }).join('');
+      }
+      html += `<div class="pv-crazy-subtitle">🛡️ حماية (بدل القتل)</div>`;
+      if(!state.crazyProtectTargets || !state.crazyProtectTargets.length){ html += `<div class="pv-status" style="padding:6px 0">ما فيه أهداف متاحة</div>`; }
+      else if(state.crazyHasKilledThisRound){ html += `<div class="pv-status" style="padding:6px 0">🚫 اخترت القتل هالليلة</div>`; }
+      else {
+        html += state.crazyProtectTargets.map(t=>`<button class="pv-protect-btn${t.marked?' marked':''}" onclick="pvEmit('player:markCrazyProtect','${t.id}')">${t.marked?'🛡️ إلغاء حماية ':'حماية '}${t.id===self.id?'(نفسك) ':''}${escapeHtml(t.name)}</button>`).join('');
+      }
+    }
+    html += `</div>`;
+  }
+ 
+  if(state.mafiaChat && state.mafiaChat.isMember && self && !self.dead){
+    html += `<div class="pv-mafia-chat"><div class="pv-section-title" style="margin-top:0">🕶️ شات المافيا السري</div>
+      <div class="mafia-chat-members" style="border:none; padding:0 0 8px">👥 ${state.mafiaChat.members.map(escapeHtml).join('، ')}</div>
+      <div class="pv-chat-list" id="pvMafiaChatList">`;
+    html += state.mafiaChat.messages.length ? state.mafiaChat.messages.map(m=>`<div class="log-entry chat-msg"><b>${escapeHtml(m.sender)}:</b> ${escapeHtml(m.text)}<span class="log-time">${m.time}</span></div>`).join('') : '<div class="log-empty">ما فيه رسائل لسا</div>';
+    html += `</div><div class="chat-input-row"><input id="pvMafiaChatInput" placeholder="رسالة سرية..." onkeydown="if(event.key==='Enter')pvSendMafiaChat()"><button onclick="pvSendMafiaChat()">إرسال</button></div></div>`;
+  }
+ 
+  html += `<div class="pv-timer" id="pvTimer">${formatTime(state.timer.seconds)}</div>`;
+ 
+  html += `<div class="pv-section-title">💬 الشات العام</div><div class="pv-chat-list" id="pvChatList">`;
+  html += (state.chat||[]).length ? state.chat.map(m=>`<div class="log-entry chat-msg ${m.isHost?'chat-host':'chat-player'}"><b>${m.isHost?'🎙️ الهوست':escapeHtml(m.sender)}:</b> ${escapeHtml(m.text)}<span class="log-time">${m.time}</span></div>`).join('') : '<div class="log-empty">ما فيه رسائل لسا</div>';
+  html += `</div>`;
+  if(self && !self.dead) html += `<div class="chat-input-row"><input id="pvChatInput" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter')pvSendChat()"><button onclick="pvSendChat()">إرسال</button></div>`;
+ 
+  html += `<div class="pv-section-title">📜 آخر الأحداث</div><div class="pv-log">`;
+  html += state.log.length ? state.log.map(l=>`<div class="log-entry">${l.text}<span class="log-time">${l.time}</span></div>`).join('') : '<div class="log-empty">ما فيه أحداث لسا</div>';
+  html += `</div>`;
+ 
+  const wasRevealed = document.getElementById('pvRoleCell')?.classList.contains('revealed');
+  const chatVal = document.getElementById('pvChatInput')?.value || '';
+  const mafiaChatVal = document.getElementById('pvMafiaChatInput')?.value || '';
+  body.innerHTML = html;
+  if(wasRevealed) document.getElementById('pvRoleCell')?.classList.add('revealed');
+  const ci = document.getElementById('pvChatInput'); if(ci) ci.value = chatVal;
+  const mci = document.getElementById('pvMafiaChatInput'); if(mci) mci.value = mafiaChatVal;
+  const cl = document.getElementById('pvChatList'); if(cl) cl.scrollTop = cl.scrollHeight;
+  const mcl = document.getElementById('pvMafiaChatList'); if(mcl) mcl.scrollTop = mcl.scrollHeight;
+ 
+  clearInterval(_pvTimerInterval);
+  if(state.timer.running && state.timer.endTs){
+    _pvTimerInterval = setInterval(()=>{
+      const remain = Math.max(0, Math.round((state.timer.endTs - Date.now())/1000));
+      const el = document.getElementById('pvTimer');
+      if(el) el.textContent = formatTime(remain);
+      if(remain<=0) clearInterval(_pvTimerInterval);
+    }, 1000);
+  }
+}
+ 
+function pvHoldReveal(show){ document.getElementById('pvRoleCell')?.classList.toggle('revealed', show); }
+function pvToggleReveal(){ document.getElementById('pvRoleCell')?.classList.toggle('revealed'); }
+function pvEmit(event, targetId){
+  socket.emit(event, { targetId }, (res)=>{
+    if(res && res.ok===false && res.message) showPvToast(res.message);
+    else if(res && res.message) showPvToast(res.message);
+  });
+}
+function pvVote(targetId){ socket.emit('player:castVote', { targetId }); }
+function pvSendChat(){
+  const input = document.getElementById('pvChatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  socket.emit('player:chatSend', { text });
+  input.value = '';
+}
+function pvSendMafiaChat(){
+  const input = document.getElementById('pvMafiaChatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  socket.emit('player:mafiaChatSend', { text });
+  input.value = '';
+}
+function showPvToast(msg){
+  if(!msg) return;
+  let toast = document.getElementById('pvToast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'pvToast';
+    toast.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1c1826ee; border:1px solid #d9b45c66; color:#f1e9d8; padding:10px 18px; border-radius:12px; font-size:13px; z-index:999; max-width:88vw; text-align:center;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>{ toast.style.opacity = '0'; }, 2600);
+}
+ 
+/* ---------------- مساعدات عامة ---------------- */
+function escapeHtml(str){
+  if(str===null||str===undefined) return '';
+  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatTime(s){
+  s = Math.max(0, Math.floor(s));
+  const m = Math.floor(s/60), sec = s%60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function showWinOverlay(gameOver){
+  const overlay = document.getElementById('winOverlay');
+  const card = document.getElementById('winCard');
+  const title = document.getElementById('winTitle');
+  const survivors = document.getElementById('winSurvivors');
+  card.className = 'win-card team-' + (gameOver.team === 'mafia' ? 'mafia' : 'citizens');
+  title.textContent = gameOver.team === 'mafia' ? '🔪 فازت المافيا!' : '🏆 فاز صف المواطنين!';
+  survivors.innerHTML = 'الناجون: ' + (gameOver.survivors||[]).map(escapeHtml).join('، ');
+  overlay.classList.add('open');
+}
+ 
+// دعم كود الغرفة بالرابط (اختياري): ?room=XXXX يعبي خانة الكود تلقائيًا
+(function(){
+  const roomParam = new URLSearchParams(location.search).get('room');
+  if(roomParam){
+    document.getElementById('gateRoomCode').value = roomParam.toUpperCase();
+  }
+})();
+</script>
+</body>
+</html>
+ 
