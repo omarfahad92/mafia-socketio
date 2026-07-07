@@ -416,7 +416,8 @@ function goDayPhase(room) {
 
   elderTargets.forEach(p => {
     room.elderUsesThisRound += 1;
-    const revealText = p.role || 'بدون رول';
+    // حماية هوية الدكتور: الشايب ما يقدر يعرف إن حد هو الدكتور، يشوفه "مواطن" بدال كذا
+    const revealText = p.role === 'دكتور' ? 'مواطن' : (p.role || 'بدون رول');
     elderReveals.push({ target: p.name, role: revealText });
     p.elderKnownRole = revealText;
   });
@@ -450,8 +451,11 @@ function goDayPhase(room) {
   }
 
   checkWinCondition(room);
+  // ننشر كل حدث من أحداث الليلة بشكل مستقل بالسجل العام (آخر الأحداث)، بما فيها
+  // القتلات الفاشلة واللي نجوا، عشان ما تضيع أي معلومة من السجل
+  resultLines.forEach(line => { logEvent(room, line, line); });
+  logEvent(room, `☀️ بدأ النهار — ${room.nightSummaryLines.join(' | ')}`, `☀️ بدأ النهار`);
   if (!room.gameEnded) {
-    logEvent(room, `☀️ بدأ النهار — ${room.nightSummaryLines.join(' | ')}`, `☀️ بدأ النهار`);
     startVotingAuto(room);
   } else {
     logEvent(room, '🏁 انتهت اللعبة مباشرة بعد نتيجة الليل');
@@ -494,10 +498,19 @@ function endVoting(room) {
 
   const breakdown = alive.map(voter => {
     const choice = room.votes[voter.id];
-    let choiceName = '🤐 لم يصوّت';
-    if (choice === '__skip__') choiceName = '⏭️ تخطي';
-    else if (choice) { const t = room.players.find(pl => pl.id === choice); choiceName = t ? t.name : 'غير معروف'; }
-    return { voter: voter.name, choice: choiceName };
+    let choiceName, text;
+    if (choice === '__skip__') {
+      choiceName = '⏭️ تخطي';
+      text = `${voter.name} فضّل التخطي ⏭️`;
+    } else if (choice) {
+      const t = room.players.find(pl => pl.id === choice);
+      choiceName = t ? t.name : 'غير معروف';
+      text = t ? `${voter.name} صوت على ${t.name}` : `${voter.name} صوت على شخص غير معروف`;
+    } else {
+      choiceName = '🤐 لم يصوّت';
+      text = `${voter.name} لم يصوّت بعد 🤐`;
+    }
+    return { voter: voter.name, choice: choiceName, text };
   });
 
   room.votingActive = false;
