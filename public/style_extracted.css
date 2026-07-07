@@ -31,6 +31,24 @@
 
 *{box-sizing:border-box;}
 html,body{height:100%;}
+body {
+    background-color: var(--bg-deep, #0a0603) !important;
+    background-image: radial-gradient(circle, var(--wood-1, #211610) 0%, var(--bg-deep, #0a0603) 100%) !important;
+    color: var(--text, #f1e9d8) !important;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* لمنع اللوحات من التمطيط الكارثي على الشاشات العريضة */
+.main-panel, [data-view] {
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+}
 ::selection{background:var(--gold); color:#0c0805;}
 
 /* اسكرول بار ثيميك خفيف */
