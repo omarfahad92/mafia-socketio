@@ -3,131 +3,179 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>🎭 لعبة المافيا أونلاين</title>
-<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style_extracted.css?v=2">
+<title>🎭 Cosa Mafia — لعبة المافيا أونلاين</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style_extracted.css">
 </head>
 <body>
 
 <div class="grain"></div>
 <div id="connStatus" class="conn-status bad">⏳ يتصل...</div>
 
-<!-- ======================= شاشة الاختيار: هوست أو لاعب ======================= -->
-<div data-view="chooser" class="chooser-wrap active">
-  <h1>🎭 لعبة المافيا</h1>
-  <div class="subtitle">اختر دورك</div>
-  <div class="chooser-btns">
-    <div class="chooser-btn" onclick="showView('hostGate')">🎙️ أنا الهوست<br><span style="font-size:12px; font-weight:400; color:var(--text-dim)">أنشئ غرفة جديدة أو ارجع لغرفتك</span></div>
-    <div class="chooser-btn" onclick="showView('playerGate')">🎮 أنا لاعب<br><span style="font-size:12px; font-weight:400; color:var(--text-dim)">ادخل بكود الغرفة واسمك</span></div>
+<!-- ======================= الشعار العالمي: يظهر في كل الواجهات ======================= -->
+<header class="brand-header">
+  <div class="brand-logo-wrap">
+    <span class="brand-flourish">✦</span>
+    <h1 class="brand-logo">Cosa <span>Mafia</span></h1>
+    <span class="brand-flourish">✦</span>
   </div>
-</div>
+  <div class="brand-sub">دورك السرّي على طاولة العصابة</div>
+</header>
 
-<!-- ======================= بوابة الهوست ======================= -->
-<div data-view="hostGate" class="room-gate">
-  <h1>🎙️ لوحة الهوست</h1>
-  <div id="hostGateBody">
-    <button class="btn btn-add" style="width:100%" onclick="hostCreateRoom()">➕ إنشاء غرفة جديدة</button>
-    <div class="hint-text">لو عندك غرفة شغالة من قبل، بيرجعك لها تلقائيًا إذا نفس المتصفح</div>
-  </div>
-</div>
+<main class="stage">
 
-<!-- ======================= بوابة اللاعب ======================= -->
-<div data-view="playerGate" class="room-gate">
-  <h1>🎮 دخول اللاعب</h1>
-  <div class="reg-row">
-    <input id="gateRoomCode" placeholder="كود الغرفة (مثال: AB3K)" maxlength="6" style="text-transform:uppercase">
-  </div>
-  <div class="reg-row">
-    <input id="gateName" placeholder="اسمك..." maxlength="24" onkeydown="if(event.key==='Enter')playerJoin()">
-  </div>
-  <button class="btn btn-add" style="width:100%" onclick="playerJoin()">🪑 دخول</button>
-  <div id="gateMsg" class="hint-text"></div>
-</div>
-
-<!-- ======================= واجهة الهوست (داخل اللعبة) ======================= -->
-<div data-view="host" id="hostView">
-  <h1>🎭 لوحة تحكم المافيا</h1>
-  <div class="subtitle">كود الغرفة: <b id="hostRoomCodeText"></b></div>
-
-  <div class="top-row">
-    <div class="glass roles-box">
-      <div class="box-title"><span class="icon">🎭</span> عدد كل رول</div>
-      <div class="role-pool-grid" id="rolePoolGrid"></div>
-      <div class="hint-text">الباقي من اللاعبين يصيرون "مواطن" تلقائيًا</div>
+<!-- ======================= VIEW 1: البوابة — اختيار الدور ======================= -->
+<div data-view="chooser" class="gateway-scene active">
+  <div class="gateway-card">
+    <div class="view-eyebrow">ابدأ اللعبة</div>
+    <div class="view-title">اختر دورك</div>
+    <div class="chooser-btns">
+      <button type="button" class="chooser-btn" onclick="showView('hostGate')">
+        <span class="chooser-btn-icon">🎙️</span>
+        <span class="chooser-btn-label">أنا الهوست</span>
+        <span class="chooser-btn-hint">أنشئ غرفة جديدة أو ارجع لغرفتك</span>
+      </button>
+      <button type="button" class="chooser-btn" onclick="showView('playerGate')">
+        <span class="chooser-btn-icon">🎮</span>
+        <span class="chooser-btn-label">أنا لاعب</span>
+        <span class="chooser-btn-hint">ادخل بكود الغرفة واسمك</span>
+      </button>
     </div>
-    <div class="glass remain-box">
-      <div class="remain-label">أحياء الآن</div>
-      <div class="remain-num" id="remainNum">0</div>
+  </div>
+</div>
+
+<!-- ======================= VIEW 1: البوابة — بوابة الهوست ======================= -->
+<div data-view="hostGate" class="gateway-scene">
+  <div class="gateway-card">
+    <div class="view-eyebrow">لوحة الهوست</div>
+    <div class="view-title">إدارة الغرفة</div>
+    <div id="hostGateBody">
+      <button class="btn btn-add gateway-btn-full" onclick="hostCreateRoom()">➕ إنشاء غرفة جديدة</button>
+      <div class="hint-text">لو عندك غرفة شغالة من قبل، بيرجعك لها تلقائيًا إذا نفس المتصفح</div>
     </div>
-    <div class="glass round-box">
-      <div class="phase-indicator" id="phaseIndicator">⏳ بانتظار توزيع الرولات</div>
-      <div class="phase-btns">
-        <button class="btn-phase night" onclick="hostEmit('host:goNight')">🌙 ليل</button>
-        <button class="btn-phase day" onclick="hostEmit('host:goDay')">☀️ صباح</button>
+    <button type="button" class="gateway-back" onclick="showView('chooser')">‹ رجوع</button>
+  </div>
+</div>
+
+<!-- ======================= VIEW 1: البوابة — دخول اللاعب ======================= -->
+<div data-view="playerGate" class="gateway-scene">
+  <div class="gateway-card">
+    <div class="view-eyebrow">دخول اللاعب</div>
+    <div class="view-title">انضم إلى الطاولة</div>
+    <div class="reg-row">
+      <input id="gateRoomCode" placeholder="كود الغرفة (مثال: AB3K)" maxlength="6" style="text-transform:uppercase">
+    </div>
+    <div class="reg-row">
+      <input id="gateName" placeholder="اسمك..." maxlength="24" onkeydown="if(event.key==='Enter')playerJoin()">
+    </div>
+    <button class="btn btn-add gateway-btn-full" onclick="playerJoin()">🪑 دخول</button>
+    <div id="gateMsg" class="hint-text"></div>
+    <button type="button" class="gateway-back" onclick="showView('chooser')">‹ رجوع</button>
+  </div>
+</div>
+
+<!-- ======================= VIEW 2: لوحة تحكم الهوست ======================= -->
+<div data-view="host" id="hostView" class="host-scene">
+  <div class="view-context-bar">
+    <div class="view-eyebrow">لوحة تحكم المافيا</div>
+    <div class="room-code-chip">كود الغرفة: <b id="hostRoomCodeText"></b></div>
+  </div>
+
+  <div class="host-desk">
+
+    <!-- العمود الأيسر: بردية اللاعبين -->
+    <section class="host-col host-col-left">
+      <div class="glass parchment-panel">
+        <div class="box-title"><span class="icon">📜</span> اللاعبون</div>
+        <div class="remain-strip">
+          <span class="remain-label-inline">أحياء الآن</span>
+          <span class="remain-num-inline" id="remainNum">0</span>
+        </div>
+        <div class="reg-row add-row-compact">
+          <input id="hostAddNameInput" placeholder="اسم لاعب محلي (اختياري)..." onkeydown="if(event.key==='Enter')hostAddPlayer()">
+          <button class="btn btn-add" onclick="hostAddPlayer()">➕</button>
+        </div>
+        <div class="parchment-scroll">
+          <div class="cards" id="cards"></div>
+        </div>
       </div>
-    </div>
-    <div class="glass timer-box">
-      <div class="timer-display" id="hostTimerDisplay">01:00</div>
-      <div class="timer-presets">
-        <button onclick="hostEmit('host:timerStart',{seconds:30})">30s</button>
-        <button onclick="hostEmit('host:timerStart',{seconds:60})">60s</button>
-        <button onclick="hostEmit('host:timerStart',{seconds:120})">120s</button>
+    </section>
+
+    <!-- العمود الأوسط: الساعة النحاسية + الحالة + الشاتات -->
+    <section class="host-col host-col-center">
+
+      <div class="glass clock-panel">
+        <div class="phase-indicator" id="phaseIndicator">⏳ بانتظار توزيع الرولات</div>
+        <div class="ornate-clock">
+          <div class="ornate-clock-ring"></div>
+          <div class="timer-display" id="hostTimerDisplay">01:00</div>
+        </div>
+        <div class="timer-presets">
+          <button onclick="hostEmit('host:timerStart',{seconds:30})">30s</button>
+          <button onclick="hostEmit('host:timerStart',{seconds:60})">60s</button>
+          <button onclick="hostEmit('host:timerStart',{seconds:120})">120s</button>
+          <button class="tbtn reset" onclick="hostEmit('host:timerStop')">⏹️</button>
+        </div>
+        <div class="phase-btns">
+          <button class="btn-phase night" onclick="hostEmit('host:goNight')">🌙 ليل</button>
+          <button class="btn-phase day" onclick="hostEmit('host:goDay')">☀️ صباح</button>
+        </div>
       </div>
-      <div class="timer-controls">
-        <button class="tbtn reset" onclick="hostEmit('host:timerStop')">⏹️</button>
+
+      <div class="glass night-summary-box" id="nightSummaryBox" style="display:none">
+        <div class="box-title"><span class="icon">🌙</span> ملخص الليلة</div>
+        <div id="nightSummaryContent"></div>
       </div>
-    </div>
+
+      <div class="glass vote-box" id="voteResultBox" style="display:none"></div>
+      <div class="glass vote-box" id="hostVoteBox" style="display:none"></div>
+
+      <div class="action-row">
+        <button class="btn btn-distribute" onclick="hostEmit('host:distributeRoles')">🎭 توزيع الرولات</button>
+        <button class="btn btn-hide" onclick="hostEmit('host:revealAllRoles')">🔓 كشف/إخفاء كل الأدوار</button>
+        <button class="btn btn-resetall" onclick="if(confirm('متأكد تبي تصفّر كل شي؟'))hostEmit('host:resetEverything')">🔄 إعادة تعيين الكل</button>
+      </div>
+
+      <div class="inline-panel" id="logPanel">
+        <div class="log-header" onclick="toggleLog()"><span>📜 سجل اللعبة</span></div>
+        <div class="log-list" id="logList"></div>
+      </div>
+
+      <div class="inline-panel" id="chatPanel">
+        <div class="log-header" onclick="toggleChat()"><span>💬 الشات العام</span></div>
+        <div class="log-list" id="hostChatList"></div>
+        <div class="chat-input-row"><input id="hostChatInput" placeholder="رسالة كهوست..." onkeydown="if(event.key==='Enter')hostSendChat()"><button onclick="hostSendChat()">إرسال</button></div>
+      </div>
+
+      <div class="inline-panel mafia-chat-panel" id="mafiaChatPanel">
+        <div class="log-header" onclick="toggleMafiaChat()"><span>🕶️ شات المافيا السري (مراقبة)</span></div>
+        <div class="mafia-chat-members" id="mafiaChatMembersBar">لا يوجد أعضاء بعد</div>
+        <div class="log-list" id="mafiaChatList"></div>
+      </div>
+
+    </section>
+
+    <!-- العمود الأيمن: الأدوار والإعدادات -->
+    <section class="host-col host-col-right">
+      <div class="glass roles-box">
+        <div class="box-title"><span class="icon">🎭</span> عدد كل رول</div>
+        <div class="role-pool-grid" id="rolePoolGrid"></div>
+        <div class="hint-text">الباقي من اللاعبين يصيرون "مواطن" تلقائيًا</div>
+      </div>
+    </section>
+
   </div>
-
-  <div class="add-row">
-    <input id="hostAddNameInput" placeholder="اسم لاعب محلي (اختياري)..." onkeydown="if(event.key==='Enter')hostAddPlayer()">
-    <button class="btn btn-add" onclick="hostAddPlayer()">➕ إضافة</button>
-  </div>
-
-  <div class="action-row">
-    <button class="btn btn-distribute" onclick="hostEmit('host:distributeRoles')">🎭 توزيع الرولات</button>
-    <button class="btn btn-hide" onclick="hostEmit('host:revealAllRoles')">🔓 كشف/إخفاء كل الأدوار</button>
-    <button class="btn btn-log" onclick="toggleLog()">📜 السجل</button>
-    <button class="btn btn-chat" onclick="toggleChat()">💬 شات</button>
-    <button class="btn btn-vote" onclick="toggleMafiaChat()">🕶️ شات المافيا (مراقبة)</button>
-    <button class="btn btn-resetall" onclick="if(confirm('متأكد تبي تصفّر كل شي؟'))hostEmit('host:resetEverything')">🔄 إعادة تعيين الكل</button>
-  </div>
-
-  <div class="glass night-summary-box" id="nightSummaryBox" style="display:none">
-    <div class="box-title"><span class="icon">🌙</span> ملخص الليلة</div>
-    <div id="nightSummaryContent"></div>
-  </div>
-
-  <div class="glass vote-box" id="voteResultBox" style="display:none"></div>
-  <div class="glass vote-box" id="hostVoteBox" style="display:none"></div>
-
-  <div class="cards" id="cards"></div>
 </div>
 
-<!-- ======================= واجهة اللاعب (داخل اللعبة) ======================= -->
-<div data-view="player" id="playerView">
-  <h1>🎭 لعبة المافيا</h1>
-  <div id="pvBody"></div>
+<!-- ======================= VIEW 3: واجهة اللاعب ======================= -->
+<div data-view="player" id="playerView" class="player-scene">
+  <div class="main-panel" id="pvBody"></div>
 </div>
 
-<!-- ======================= لوحات جانبية مشتركة (هوست) ======================= -->
-<div class="log-panel" id="logPanel">
-  <div class="log-header"><span>📜 سجل اللعبة</span><button class="modal-close" onclick="toggleLog()">✕</button></div>
-  <div class="log-list" id="logList"></div>
-</div>
+</main>
 
-<div class="log-panel" id="chatPanel">
-  <div class="log-header"><span>💬 الشات العام</span><button class="modal-close" onclick="toggleChat()">✕</button></div>
-  <div class="log-list" id="hostChatList"></div>
-  <div class="chat-input-row"><input id="hostChatInput" placeholder="رسالة كهوست..." onkeydown="if(event.key==='Enter')hostSendChat()"><button onclick="hostSendChat()">إرسال</button></div>
-</div>
-
-<div class="mafia-chat-panel" id="mafiaChatPanel">
-  <div class="log-header"><span>🕶️ شات المافيا السري (مراقبة الهوست)</span><button class="modal-close" onclick="toggleMafiaChat()">✕</button></div>
-  <div class="mafia-chat-members" id="mafiaChatMembersBar">لا يوجد أعضاء بعد</div>
-  <div class="log-list" id="mafiaChatList"></div>
-</div>
-
+<!-- ======================= نافذة الفوز — مشتركة ======================= -->
 <div class="win-overlay" id="winOverlay">
   <div class="win-card" id="winCard">
     <div class="win-confetti-layer" id="confettiLayer"></div>
@@ -308,7 +356,7 @@ function renderHostCards(state){
     if(!p.dead){
       btns += `<button class="cbtn kill${p.markedKill?' active':''}" onclick="hostEmit('host:manualMark',{kind:'kill',playerId:'${p.id}'})">🔪 ${p.markedKill?'إلغاء استهداف':'استهداف'}</button>`;
       btns += `<button class="cbtn protect${(p.protected&&!p.protectedByCrazyId)?' active':''}" onclick="hostEmit('host:manualMark',{kind:'protect',playerId:'${p.id}'})">🩺 ${(p.protected&&!p.protectedByCrazyId)?'إلغاء حماية':'حماية'}</button>`;
-      btns += `<button class="cbtn elder${p.markedElder?' active':''}" onclick="hostEmit('host:manualMark',{kind:'elder',playerId:'${p.id}'})">👴 ${p.markedElder?'إلغاء سؤال الشايب':'سؤال الشايب'}</button>`;
+      btns += `<button class="cbtn spy${p.markedSpy?' active':''}" onclick="hostEmit('host:manualMark',{kind:'spy',playerId:'${p.id}'})">👁️ ${p.markedElder?'إلغاء سؤال الشايب':'سؤال الشايب'}</button>`;
       btns += `<button class="cbtn spy${p.markedSpy?' active':''}" onclick="hostEmit('host:manualMark',{kind:'spy',playerId:'${p.id}'})">🕵️ ${p.markedSpy?'إلغاء تجسس':'تجسس'}</button>`;
       btns += `<button class="cbtn hunter${p.markedHunter?' active':''}" onclick="hostEmit('host:manualMark',{kind:'hunter',playerId:'${p.id}'})" ${p.markedHunter?'disabled':''}>🏹 ${p.markedHunter?'هدف الهنتر':'صيد هنتر'}</button>`;
       if(hasAliveCrazy){
@@ -618,13 +666,13 @@ function showPvToast(msg){
   if(!toast){
     toast = document.createElement('div');
     toast.id = 'pvToast';
-    toast.className = 'pv-toast';
+    toast.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1c1826ee; border:1px solid #d9b45c66; color:#f1e9d8; padding:10px 18px; border-radius:12px; font-size:13px; z-index:999; max-width:88vw; text-align:center;';
     document.body.appendChild(toast);
   }
   toast.textContent = msg;
-  toast.classList.add('show');
+  toast.style.opacity = '1';
   clearTimeout(toast._t);
-  toast._t = setTimeout(()=>{ toast.classList.remove('show'); }, 2600);
+  toast._t = setTimeout(()=>{ toast.style.opacity = '0'; }, 2600);
 }
 
 /* ---------------- مساعدات عامة ---------------- */
